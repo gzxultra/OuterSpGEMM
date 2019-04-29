@@ -257,7 +257,7 @@ size_t i386_cpuid_caches() {
     if (cache_type == 0) // end of valid cache identifiers
       break;
 
-    char *cache_type_string;
+    char const *cache_type_string;
     switch (cache_type) {
     case 1:
       cache_type_string = "Data Cache";

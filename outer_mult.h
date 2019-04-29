@@ -9,7 +9,6 @@
 #include <omp.h>
 #include <unistd.h>
 #include <cstring>
-
 using namespace std;
 
 static uint32_t nrows_per_blocker;
@@ -57,6 +56,7 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
             }
         }
     }
+    
     double end = omp_get_wtime();
     
     double bytes = (A.nnz + B.nnz) * sizeof(IT) + (A.cols + B.rows) * sizeof(IT);

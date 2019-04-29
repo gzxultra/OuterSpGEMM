@@ -20,7 +20,7 @@ int MKLSpGEMM_symbolic(const CSR<IT,float> &A, const CSR<IT,float> &B, CSR<IT,fl
 }
 
 template <bool sortOutput, typename IT>
-int MKLSpGEMM_symbolic(const CSR<IT,double> &A, const CSR<IT,double> &B, CSR<IT,double> &C)
+void MKLSpGEMM_symbolic(const CSR<IT,double> &A, const CSR<IT,double> &B, CSR<IT,double> &C)
 {
     int request = 1;
     int sort = 7; // don't sort anything
