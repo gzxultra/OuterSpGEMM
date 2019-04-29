@@ -1,5 +1,3 @@
-
-
 #include "CSC.h"
 #include "CSR.h"
 #include "Triple.h"
@@ -37,6 +35,33 @@ uint64_t getFlop(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
         IT rownnz = B.rowptr[i + 1] - B.rowptr[i];
         flop += (colnnz * rownnz);
     }
+    return flop;
+}
+
+template <typename IT, typename NT>
+uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
+{
+    uint64_t flop = 0;
+    
+    double start = omp_get_wtime();
+#pragma omp parallel for reduction(+ : flop)
+    for (IT i = 0; i < A.cols; ++i)
+    {
+        for(IT j=A.colptr[i]; j<A.colptr[i + 1]; j++)
+        {
+            IT rowid = A.rowids[j];
+            for(IT k=B.rowptr[i]; k<B.rowptr[i+1]; k++)
+            {
+                IT colid = B.colids[j];
+                flop+= (rowid+colid);
+            }
+        }
+    }
+    double end = omp_get_wtime();
+    
+    double bytes = (A.nnz + B.nnz) * sizeof(IT) + (A.cols + B.rows) * sizeof(IT);
+    double readbw = bytes / (1000000000 * (end-start));
+    cout << "Read Bandwidth = " << readbw << " GB/s";
     return flop;
 }
 

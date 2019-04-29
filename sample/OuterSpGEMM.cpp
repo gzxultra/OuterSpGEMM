@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
   B_csr.Sorted();
 
   double start, end, msec, ave_msec, mflops;
+    
   /* Count total number of floating-point operations */
   auto nfop = get_flop(A_csc, B_csr);
   cout << "Total number of floating-point operations including addition and "

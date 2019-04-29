@@ -9,6 +9,7 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <random>
 
 #include "BitMap.h"
 #include "utility.h"
@@ -418,7 +419,7 @@ template <class IT, class NT> void CSC<IT, NT>::Sorted() {
 }
 
 template <class IT, class NT> void CSC<IT, NT>::shuffleIds() {
-  mt19937_64 mt(0);
+    mt19937_64 mt(0);
   for (IT i = 0; i < cols; ++i) {
     IT offset = colptr[i];
     IT width = colptr[i + 1] - colptr[i];
