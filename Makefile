@@ -27,6 +27,12 @@ $(BIN)/%_hw: $(SAMPLE)/%.cpp
 	mkdir -p $(BIN)
 	$(CC) $(FLAGS) $(INCLUDE) -o $@ $^ -DCPP -DHW_EXE ${TOCOMPILE} ${LIBS}
 
+# specific for OuterSpGEMM
+# Will do the same for other exe files
+$(BIN)/OuterSpGEMM_hw: outer_mult.h sample/OuterSpGEMM.cpp
+	mkdir -p $(BIN)
+	$(CC) $(FLAGS) $(INCLUDE) -o $@ $^ -DCPP -DHW_EXE ${TOCOMPILE} ${LIBS}
+
 clean:
 	(cd GTgraph; make clean; cd ../..)
 	rm -rf ./bin/*
