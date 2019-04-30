@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   B_csr.Sorted();
 
   double start, end, msec, ave_msec, mflops;
-    omp_set_num_threads(tnums);
+    omp_set_num_threads(tnums[0]);
     for(int it=1; it<=10; ++it)
     {
         ReadBW(A_csc, B_csr);
