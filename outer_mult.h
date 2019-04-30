@@ -61,7 +61,7 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
     
     double bytes = (A.nnz + B.nnz) * sizeof(IT) + (A.cols + B.rows) * sizeof(IT);
     double readbw = bytes / (1000000000 * (end-start));
-    cout << "Read Bandwidth = " << readbw << " GB/s";
+    cout << "Read Bandwidth = " << readbw << " GB/s" << endl;
     return flop;
 }
 

@@ -74,7 +74,12 @@ int main(int argc, char *argv[]) {
   B_csr.Sorted();
 
   double start, end, msec, ave_msec, mflops;
-    
+  
+    for(int it=1; it<=10; ++it)
+    {
+        ReadBW(A_csc, B_csr);
+    }
+    return 1;
   /* Count total number of floating-point operations */
   auto nfop = get_flop(A_csc, B_csr);
   cout << "Total number of floating-point operations including addition and "
@@ -82,6 +87,7 @@ int main(int argc, char *argv[]) {
        << nfop << endl
        << endl;
 
+    
   for (int tnum : tnums) {
     omp_set_num_threads(tnum);
 
