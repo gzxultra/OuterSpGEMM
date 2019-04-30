@@ -66,9 +66,10 @@ void stream(vector<NT> a, vector<NT> b, int itemsize)
     double start = omp_get_wtime();
     int niter    = 1000;
 
-#pragma omp parallel for
+
     for (int iter = 0; iter < niter; ++iter)
     {
+#pragma omp parallel for
         for (int i = 0; i < N; ++i)
         {
             a[i] = b[i];
