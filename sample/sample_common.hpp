@@ -11,11 +11,17 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <random>
+#include <thread>
 
 #include "../CSC.h"
 #include "../CSR.h"
 #include "../IO.h"
 #include "../utility.h"
+#include "../PaRMAT/src/GraphGen_sorted.hpp"
+#include "../PaRMAT/src/GraphGen_notSorted.hpp"
+#include "../PaRMAT/src/utils.hpp"
+#include "../PaRMAT/src/internal_config.hpp"
 
 using namespace std;
 
@@ -43,6 +49,48 @@ enum generator_type {
   rmat_graph,
   er_graph,
 };
+
+template <class INDEXTYPE, class VALUETYPE>
+void GenRMAT_Par(CSC<INDEXTYPE, VALUETYPE> &A_csc, int64_t nVertices, int64_t nEdges, double a, double b, double c)
+{
+    double RAM_usage = 0.5;
+    unsigned long long standardCapacity = 0;
+    
+    
+    
+    // try to manage their numbers automatically. If cannot determine, go single-threaded.
+    unsigned int nCPUWorkerThreads = std::max( 1, static_cast<int>(std::thread::hardware_concurrency()) - 1 );
+    
+    // Avoiding very small regions which may cause incorrect results.
+    if( nEdges < 10000 )
+        nCPUWorkerThreads = 1;
+    
+    auto totalSystemRAM = static_cast<unsigned long long>(getTotalSystemMemory());   // In bytes.
+    auto availableSystemRAM = calculateAvailableRAM( totalSystemRAM, RAM_usage );    // In bytes.
+    
+    standardCapacity = availableSystemRAM / (2*nCPUWorkerThreads*sizeof(Edge)); // 2 can count for vector's effect.
+    std::cout << "Each thread capacity is " << standardCapacity << " edges." << "\n";
+    
+    double start = omp_get_wtime();
+    
+    // GenerateGraph generates vertices 0...n range
+    // hence, we passed nVertices-1
+    // danger: do not directedGraph to false (then multithreaded setting gets to infiniteloop in utils.cpp generate_edges function line 156)
+    std::vector<std::pair<int64_t, int64_t>> edges =
+    GraphGen_notSorted::GenerateGraph(
+                                      nEdges, nVertices-1,
+                                      a, b, c,
+                                      nCPUWorkerThreads,
+                                      standardCapacity,
+                                      true, //allowEdgeToSelf,
+                                      false, //allowDuplicateEdges,
+                                      true //directedGraph
+                                      );
+    
+    double end = omp_get_wtime();
+    cerr << "Generator time: " << end-start << " seconds"<< endl;
+    A_csc = CSC<INDEXTYPE, VALUETYPE>(edges, nEdges, nVertices, nVertices);
+}
 
 template <class INDEXTYPE, class VALUETYPE>
 void SetInputMatricesAsCSC(CSC<INDEXTYPE, VALUETYPE> &A_csc,
@@ -95,6 +143,9 @@ void SetInputMatricesAsCSC(CSC<INDEXTYPE, VALUETYPE> &A_csc,
       a = b = c = d = 0.25;
     }
     getParams();
+      
+      
+      /*
     setGTgraphParams(scale, edgefactor, a, b, c, d);
     graph G1;
     graphGen(&G1);
@@ -105,7 +156,6 @@ void SetInputMatricesAsCSC(CSC<INDEXTYPE, VALUETYPE> &A_csc,
       free(G1.end);
       free(G1.w);
     }
-
     graph G2;
     graphGen(&G2);
     cerr << "Generator returned" << endl; // convert to CSC
@@ -115,7 +165,14 @@ void SetInputMatricesAsCSC(CSC<INDEXTYPE, VALUETYPE> &A_csc,
       free(G2.start);
       free(G2.end);
       free(G2.w);
-    }
+    }*/
+      // generate using parallel generator
+      int64_t nVertices = pow(2, scale);
+      int64_t nEdges = nVertices * edgefactor;;
+      GenRMAT_Par(A_csc, nVertices, nEdges, a, b, c);
+      cerr << "Generator returned for the first matrix" << endl;
+      GenRMAT_Par(B_csc, nVertices, nEdges, a, b, c);
+      cerr << "Generator returned for the second matrix" << endl;
   } else {
     if (binary) {
       ReadBinary(inputname1, A_csc);

@@ -1,11 +1,13 @@
 RMATPATH = GTgraph/R-MAT
 SPRNPATH = GTgraph/sprng2.0-lite
+PRMATPATH = PaRMAT/Release/src
+PRMATPATH1 = PaRMAT/Release/
 
 include GTgraph/Makefile.var
 INCLUDE += -I$(SPRNPATH)/include
 CC = g++
 
-FLAGS = -fopenmp
+FLAGS = -g -fopenmp -O3
 
 sprng:
 	(cd $(SPRNPATH); $(MAKE); cd ../..)
@@ -13,7 +15,11 @@ sprng:
 rmat:	sprng
 	(cd $(RMATPATH); $(MAKE); cd ../..)
 
-TOCOMPILE = $(RMATPATH)/graph.o $(RMATPATH)/utils.o $(RMATPATH)/init.o $(RMATPATH)/globals.o
+
+prmat:
+	(cd $(PRMATPATH1); $(MAKE); cd ../..)
+
+TOCOMPILE = $(RMATPATH)/graph.o $(RMATPATH)/utils.o $(RMATPATH)/init.o $(RMATPATH)/globals.o $(PRMATPATH)/GraphGen_notSorted.o $(PRMATPATH)/utils.o $(PRMATPATH)/Edge.o $(PRMATPATH)/Square.o $(PRMATPATH)/GraphGen_sorted.o
 
 # flags defined in GTgraph/Makefile.var
 SAMPLE = ./sample
@@ -21,7 +27,7 @@ BIN = ./bin
 SRC_SAMPLE = $(wildcard $(SAMPLE)/*.cpp)
 SAMPLE_TARGET = $(SRC_SAMPLE:$(SAMPLE)%=$(BIN)%)
 
-spgemm: rmat $(SAMPLE_TARGET:.cpp=_hw)
+spgemm: rmat prmat $(SAMPLE_TARGET:.cpp=_hw)
 
 $(BIN)/%_hw: $(SAMPLE)/%.cpp
 	mkdir -p $(BIN)
@@ -35,6 +41,7 @@ $(BIN)/OuterSpGEMM_hw: outer_mult.h sample/OuterSpGEMM.cpp
 
 clean:
 	(cd GTgraph; make clean; cd ../..)
+	(cd $(PRMATPATH1); make clean; cd ../..)
 	rm -rf ./bin/*
 	rm -rf assets/*
 

@@ -39,6 +39,7 @@ public:
   }
   CSC(Triple<IT, NT> *triples, IT mynnz, IT m,
       IT n);                                  // altro costruttore di default
+  CSC(std::vector<std::pair<int64_t, int64_t>> edges, IT mynnz, IT m, IT n);
   CSC(IT scale, IT r_scale, IT r_edgefactor); // for tall-skiny matrix
 
   void make_empty() {
@@ -267,6 +268,48 @@ CSC<IT, NT>::CSC(Triple<IT, NT> *triples, IT mynnz, IT m, IT n)
     }
   }
   my_free<IT>(work);
+}
+
+
+// Construct a Csc object from an array of pairs
+template <class IT, class NT>
+CSC<IT,NT>::CSC(std::vector<std::pair<int64_t, int64_t>> edges, IT mynnz, IT m, IT n):nnz(mynnz),rows(m),cols(n)
+{
+    colptr = my_malloc<IT>(cols + 1);
+    rowids = my_malloc<IT>(nnz);
+    values = my_malloc<NT>(nnz);
+    
+    IT *work = my_malloc<IT>(cols);
+    std::fill(work, work+cols, (IT) 0);
+    for (IT k = 0 ; k < nnz ; ++k)
+    {
+        IT colId =  std::get<1>(edges[k]);
+        work [colId]++ ;
+    }
+    
+    if(nnz > 0)
+    {
+        colptr[cols] = CumulativeSum (work, cols) ;        // cumulative sum of w
+        copy(work, work+cols, colptr);
+        for (IT k = 0 ; k < nnz ; ++k)
+        {
+            IT colId = std::get<1>(edges[k]);
+            IT rowId = std::get<0>(edges[k]);
+            rowids[work[colId]++] = rowId;
+        }
+#pragma omp parallel for
+        for(IT i=0; i< cols; ++i)
+        {
+            sort(rowids + colptr[i], rowids + colptr[i+1]);
+        }
+        
+#pragma omp parallel for
+        for (IT k = 0 ; k < nnz ; ++k)
+        {
+            values[k] = (NT) 1;
+        }
+    }
+    my_free<IT>(work);
 }
 
 template <class IT, class NT>
