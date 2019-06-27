@@ -107,7 +107,13 @@ inline unsigned int getDivident(unsigned int n, unsigned int d) {
 // Memory allocation by C++-new / Aligned malloc / scalable malloc
 template <typename T> inline T *my_malloc(int array_size) {
 #ifdef CPP
-  return (T *)(new T[array_size]);
+   T * a = new T[array_size];
+  #pragma omp parallel for
+  for(int i=0; i<array_size; i++)
+  {
+	a[i] = T();
+  } 
+  return a;
 #elif defined IMM
   return (T *)_mm_malloc(sizeof(T) * array_size, 64);
 #elif defined TBB

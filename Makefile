@@ -5,7 +5,7 @@ include GTgraph/Makefile.var
 INCLUDE += -I$(SPRNPATH)/include
 CC = g++
 
-FLAGS = -g -fopenmp -O3
+FLAGS = -fopenmp
 
 sprng:
 	(cd $(SPRNPATH); $(MAKE); cd ../..)

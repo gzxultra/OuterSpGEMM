@@ -21,10 +21,33 @@
 
 using namespace std;
 
-
+#define ITER 10
 #define VALUETYPE double
 #define INDEXTYPE int32_t
 
+
+template <typename TYPE>
+void ReduceDynamicArray(TYPE* a , int size)
+{
+    TYPE sum = 0;
+#pragma omp parallel for
+    for (int j=0; j<size; j++)
+    {
+        a[j] = 1;
+    }
+    double start = omp_get_wtime();
+    for(int i=0; i<ITER; i++)
+    {
+#pragma omp parallel for reduction(+ : sum)
+        for (int j=0; j<size; j++)
+            sum += a[j];
+    }
+    
+    double end  = omp_get_wtime();
+    double msec = ((end - start) * 1000)/ITER ;
+    double bandwidth =  (double) size * sizeof(TYPE) / 1024 / 1024 / msec;
+    cout << "StreamTest [ReduceDynamicArray] : " << bandwidth << " [GB/sec], " << msec << " [milli seconds]" << " "<< sum << endl;
+}
 
 template <typename IT, typename NT>
 void mtxstream(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
@@ -85,11 +108,20 @@ void stream(vector<NT> a, vector<NT> b, int itemsize)
 template <typename IT, typename NT>
 void StreamTest(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
 {
-    vector<IT> stream1(A.nnz, 0);
-    std::iota(stream1.begin(), stream1.end(), 0);
-    vector<IT> stream2(A.nnz, 0);
-    std::iota(stream2.begin(), stream2.end(), 0);
-    stream(stream1, stream2, sizeof(IT));
+    IT* a32 = new IT[A.nnz]();
+    NT* a64 = new NT[A.nnz]();
+    ReduceDynamicArray(a32, A.nnz);
+    ReduceDynamicArray(a64, A.nnz);
+    ReduceDynamicArray(A.values, A.nnz);
+    ReduceDynamicArray(A.rowids, A.nnz);
+    delete[] a32;
+    delete[] a64;
+    
+    //vector<IT> stream1(A.nnz, 0);
+    //std::iota(stream1.begin(), stream1.end(), 0);
+    //vector<IT> stream2(A.nnz, 0);
+    //std::iota(stream2.begin(), stream2.end(), 0);
+    //stream(stream1, stream2, sizeof(IT));
 }
 
 
