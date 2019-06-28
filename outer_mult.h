@@ -37,126 +37,137 @@ uint64_t getFlop(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
     return flop;
 }
 
-
+// testing different read bandwidths
 template <typename IT, typename NT>
 uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
 {
-
- 
-NT flop  = 0;
-  double start = omp_get_wtime();
-  	#pragma omp parallel for  reduction(+ : flop)
-	for (IT i = 0; i < A.nnz; ++i)
-	{
-		flop += A.values[i];
-	}
- double end = omp_get_wtime();
-
-    double bytes = A.nnz  * sizeof(NT);
-    double readbw = bytes / (1000000000 * (end-start));
-    cout << "Read Bandwidth1 = " << readbw << " GB/s" << endl;
-
-
- flop  = 0;
-   start = omp_get_wtime();
-        #pragma omp parallel for  reduction(+ : flop)
-        for (IT i = 0; i < A.nnz; ++i)
-        {
-                flop ++;
-        }
- end = omp_get_wtime();
-
-    cout << "time = " << 1000* (end-start) << " flop" << flop << endl;
-
-
-
-flop  = 0;
-   start = omp_get_wtime();
-        #pragma omp parallel for  reduction(+ : flop)
-        for (IT i = 0; i < A.nnz; ++i)
-        {
-		for(IT j=0; j<1; j++)
-		{
-                flop ++;
-		}
-        }
- end = omp_get_wtime();
-
-    cout << "time = " << 1000*(end-start) << " flop" << flop<< endl;
-
-    flop = 0;
-    start = omp_get_wtime();
-//#pragma omp parallel
-
-  //IT i, j;
-#pragma omp parallel for reduction(+ : flop)
-    for (IT i = 0; i < A.cols; i++)
+    NT flop;
+    double start = omp_get_wtime();
+    for(int it = 0; it<10; it++)
     {
-        for(IT j=A.colptr[i]; j<A.colptr[i + 1]; j++)
+        flop  = 0;
+#pragma omp parallel for  reduction(+ : flop)
+        for (IT i = 0; i < A.nnz; ++i)
         {
-           // IT rowid = A.rowids[j];
-           // for(IT k=B.rowptr[i]; k<B.rowptr[i+1]; k++)
-           // {
-             //   IT colid = B.colids[k];
-                flop+= A.values[j];
-           // }
+            flop += A.rowids[i];
         }
     }
-
-    end = omp_get_wtime();
-    bytes = (A.nnz) * sizeof(NT) + (A.cols) * sizeof(IT);
-    readbw = bytes / (1000000000 * (end-start));
-    cout << "Read Bandwidth2 = " << readbw << " GB/s" << endl;
- 
-
-
-    flop = 0;
+    double end = omp_get_wtime();
+    
+    double bytes = A.nnz  * sizeof(IT);
+    double readbw = bytes / (1000000000 * (end-start)/10);
+    cout << "Read Bandwidth (reading rowids) = " << readbw << " GB/s" << endl;
+    cout << "dummy sum:" << flop << endl;
+    
+    /*
+    flop  = 0;
     start = omp_get_wtime();
-/*
-#pragma omp parallel for reduction(+ : flop)
-    for (IT i = 0; i < A.cols; i+=8)
+#pragma omp parallel for  reduction(+ : flop)
+    for (IT i = 0; i < A.nnz; ++i)
     {
-	for(int kk=0; kk<8; kk++)
-	{
-		int nA = A.colptr[i+1] - A.colptr[i];
-		int nB = B.rowptr[i+1] - B.rowptr[i];
-
-		if(nA >=4 && nB>=4)
-		{
-			for(IT j=A.colptr[i+kk]; j<A.colptr[i+kk+1]; j++)
-        		{
-            			IT rowid = A.rowids[j];
-            			for(IT k=B.rowptr[i+kk];  k<B.rowptr[i+kk+1]; k++)
-            			{
-                			IT colid = B.colids[k];
-                			flop+= (rowid+colid);
-            			}
-        		}
-		}
-	}
-*/
-
-#pragma omp parallel for reduction(+ : flop)
-    for (IT i = 0; i < A.cols; i++)
+        flop ++;
+    }
+    end = omp_get_wtime();
+    
+    cout << "time = " << 1000* (end-start) << " flop" << flop << endl;
+    
+    
+    
+    flop  = 0;
+    start = omp_get_wtime();
+#pragma omp parallel for  reduction(+ : flop)
+    for (IT i = 0; i < A.nnz; ++i)
     {
-        //IT colid = i;
-        for(IT j=A.colptr[i]; j<A.colptr[i + 1]; j++)
+        for(IT j=0; j<1; j++)
         {
-            IT rowid = A.rowids[j];
-            for(IT k=B.rowptr[i];  k<B.rowptr[i+1]; k++)
+            flop ++;
+        }
+    }
+    end = omp_get_wtime();
+    
+    cout << "time = " << 1000*(end-start) << " flop" << flop<< endl;
+    */
+    
+    
+    start = omp_get_wtime();
+    for(int it = 0; it<10; it++)
+    {
+        flop = 0;
+#pragma omp parallel for reduction(+ : flop)
+        for (IT i = 0; i < A.cols; i++)
+        {
+            for(IT j=A.colptr[i]; j<A.colptr[i + 1]; j++)
             {
-                IT colid = B.colids[k];
-                flop+= (rowid+colid);
+                // IT rowid = A.rowids[j];
+                // for(IT k=B.rowptr[i]; k<B.rowptr[i+1]; k++)
+                // {
+                //   IT colid = B.colids[k];
+                flop+= A.rowids[j];
+                // }
+            }
+        }
+    }
+    
+    end = omp_get_wtime();
+    bytes = (A.nnz) * sizeof(IT) + (A.cols) * sizeof(IT);
+    readbw = bytes / (1000000000 * (end-start)/10);
+    cout << "Read Bandwidth (reading rowids via colptr) = " << readbw << " GB/s" << endl;
+    cout << "dummy sum:" << flop << endl;
+    
+    
+    
+   
+    /*
+     #pragma omp parallel for reduction(+ : flop)
+     for (IT i = 0; i < A.cols; i+=8)
+     {
+     for(int kk=0; kk<8; kk++)
+     {
+     int nA = A.colptr[i+1] - A.colptr[i];
+     int nB = B.rowptr[i+1] - B.rowptr[i];
+     
+     if(nA >=4 && nB>=4)
+     {
+     for(IT j=A.colptr[i+kk]; j<A.colptr[i+kk+1]; j++)
+     {
+     IT rowid = A.rowids[j];
+     for(IT k=B.rowptr[i+kk];  k<B.rowptr[i+kk+1]; k++)
+     {
+     IT colid = B.colids[k];
+     flop+= (rowid+colid);
+     }
+     }
+     }
+     }
+     */
+
+    start = omp_get_wtime();
+    for(int it = 0; it<10; it++)
+    {
+        flop = 0;
+#pragma omp parallel for reduction(+ : flop)
+        for (IT i = 0; i < A.cols; i++)
+        {
+            //IT colid = i;
+            for(IT j=A.colptr[i]; j<A.colptr[i + 1]; j++)
+            {
+                IT rowid = A.rowids[j];
+                for(IT k=B.rowptr[i];  k<B.rowptr[i+1]; k++)
+                {
+                    IT colid = B.colids[k];
+                    flop+= (rowid+colid);
+                }
             }
         }
     }
     end = omp_get_wtime();
     
     bytes = (A.nnz + B.nnz) * sizeof(IT) + (A.cols + B.rows) * sizeof(IT);
-    readbw = bytes / (1000000000 * (end-start));
-    cout << "Read Bandwidth3 = " << readbw << " GB/s" << endl;
-  
-  return flop;
+    readbw = bytes / (1000000000 * (end-start)/10);
+    cout << "Read Bandwidth (both A and B) = " << readbw << " GB/s" << endl;
+    cout << "dummy sum:" << flop << endl;
+    
+    return flop;
 }
 
 template <typename IT, typename NT>
