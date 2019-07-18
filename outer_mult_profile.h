@@ -194,20 +194,27 @@ void OuterSpGEMM_stage(const CSC<IT, NT>& A, const CSR<IT, NT>& B, IT startIdx, 
                 uint16_t row_blocker_index = rowid / nrows_per_blocker;
                 IT local_blocker_size_offset = thread_id * num_blockers + row_blocker_index;
                 IT local_blocker_offset = local_blocker_size_offset * block_width;
-
+                TripleNode* cur_local_blockers = local_blockers + local_blocker_offset + size_of_local_blockers[local_blocker_size_offset];
+                TripleNode* end_local_blockers = local_blockers + local_blocker_offset + block_width;
                 for (IT k = B.rowptr[idx]; k < B.rowptr[idx + 1]; ++k)   // nrows(B) * 4
                 {
-                    local_blockers[local_blocker_offset + size_of_local_blockers[local_blocker_size_offset]++] = std::move(TripleNode(rowid, B.colids[k], A.values[j] * B.values[k])); // flop * (4 + 4 + 8 + 8)
-                    if (size_of_local_blockers[local_blocker_size_offset] == block_width) // flop * 16
+                    //local_blockers[local_blocker_offset + size_of_local_blockers[local_blocker_size_offset]++] = std::move(TripleNode(rowid, B.colids[k], A.values[j] * B.values[k])); // flop * (4 + 4 + 8 + 8)
+                    *cur_local_blockers = std::move(TripleNode(rowid, B.colids[k], A.values[j] * B.values[k]));
+                    cur_local_blockers++;
+                    //if (size_of_local_blockers[local_blocker_size_offset] == block_width) // flop * 16
+                    if (cur_local_blockers == end_local_blockers) // flop * 16
                     {
                         std::memcpy(
                             global_blockers + __sync_fetch_and_add(&row_blocker_end_ptr[row_blocker_index], block_width),
                             local_blockers + local_blocker_offset,
                             block_width * sizeof(TripleNode)
                         );
-                        size_of_local_blockers[local_blocker_size_offset] = 0;
+                        cur_local_blockers = local_blockers + local_blocker_offset;
+                        //size_of_local_blockers[local_blocker_size_offset] = 0;
+                        
                     }
                 }
+                size_of_local_blockers[local_blocker_size_offset] = cur_local_blockers - local_blockers - local_blocker_offset;
             }
         for (uint16_t row_blocker_index = 0; row_blocker_index < num_blockers; row_blocker_index++)
         {
@@ -223,6 +230,13 @@ void OuterSpGEMM_stage(const CSC<IT, NT>& A, const CSR<IT, NT>& B, IT startIdx, 
     }
     w2 = omp_get_wtime();
     t_pb1 += w2 - w1;
+    
+    
+    double FLOPS_pb1 = total_flop / (1000000000 * (w2 - w1));
+    double bytes_pb1 = (A.nnz + B.nnz) * (sizeof(IT) + sizeof(NT)) + (A.cols + B.rows) * sizeof(IT) + total_flop * (2 * sizeof(IT) + sizeof(NT));
+    double BW_pb1 = bytes_pb1 / (1000000000 * (w2 - w1));
+    cout << "Bandwidth = " << BW_pb1 << " GB/s" <<  " GFLOPS = " << FLOPS_pb1 << endl;
+    
 
     w1 = omp_get_wtime();
 
@@ -420,7 +434,7 @@ void OuterSpGEMM(const CSC<IT, NT>& A, const CSR<IT, NT>& B, CSR<IT, NT>& C, int
     double t_alloc = 0;
     double t_free = 0;
 
-    int niter = 15;
+    int niter = 5;
 
     for (int i = 0; i < niter; ++i) {
         OuterSpGEMM_stage(A, B, 0, A.rows, C, t_symbolic, t_pb1, t_pb2, t_sort, t_merge, t_convert, t_alloc, t_free, nblockers, nblockchars);
