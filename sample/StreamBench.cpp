@@ -42,7 +42,7 @@ void ReduceDynamicArray(TYPE* a , int size)
         for (int j=0; j<size; j++)
             sum += a[j];
     }
-    
+
     double end  = omp_get_wtime();
     double msec = ((end - start) * 1000)/ITER ;
     double bandwidth =  (double) size * sizeof(TYPE) / 1024 / 1024 / msec;
@@ -116,7 +116,7 @@ void StreamTest(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
     ReduceDynamicArray(A.rowids, A.nnz);
     delete[] a32;
     delete[] a64;
-    
+
     //vector<IT> stream1(A.nnz, 0);
     //std::iota(stream1.begin(), stream1.end(), 0);
     //vector<IT> stream2(A.nnz, 0);

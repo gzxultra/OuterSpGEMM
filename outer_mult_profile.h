@@ -198,7 +198,6 @@ void OuterSpGEMM_stage(const CSC<IT, NT>& A, const CSR<IT, NT>& B, IT startIdx, 
                 TripleNode* end_local_blockers = local_blockers + local_blocker_offset + block_width;
                 for (IT k = B.rowptr[idx]; k < B.rowptr[idx + 1]; ++k)   // nrows(B) * 4
                 {
-                    //local_blockers[local_blocker_offset + size_of_local_blockers[local_blocker_size_offset]++] = std::move(TripleNode(rowid, B.colids[k], A.values[j] * B.values[k])); // flop * (4 + 4 + 8 + 8)
                     *cur_local_blockers = std::move(TripleNode(rowid, B.colids[k], A.values[j] * B.values[k]));
                     cur_local_blockers++;
                     //if (size_of_local_blockers[local_blocker_size_offset] == block_width) // flop * 16
@@ -211,11 +210,12 @@ void OuterSpGEMM_stage(const CSC<IT, NT>& A, const CSR<IT, NT>& B, IT startIdx, 
                         );
                         cur_local_blockers = local_blockers + local_blocker_offset;
                         //size_of_local_blockers[local_blocker_size_offset] = 0;
-                        
+
                     }
                 }
                 size_of_local_blockers[local_blocker_size_offset] = cur_local_blockers - local_blockers - local_blocker_offset;
             }
+
         for (uint16_t row_blocker_index = 0; row_blocker_index < num_blockers; row_blocker_index++)
         {
             IT local_blocker_size_offset = thread_id * num_blockers + row_blocker_index;
@@ -230,13 +230,13 @@ void OuterSpGEMM_stage(const CSC<IT, NT>& A, const CSR<IT, NT>& B, IT startIdx, 
     }
     w2 = omp_get_wtime();
     t_pb1 += w2 - w1;
-    
-    
+
+
     double FLOPS_pb1 = total_flop / (1000000000 * (w2 - w1));
     double bytes_pb1 = (A.nnz + B.nnz) * (sizeof(IT) + sizeof(NT)) + (A.cols + B.rows) * sizeof(IT) + total_flop * (2 * sizeof(IT) + sizeof(NT));
     double BW_pb1 = bytes_pb1 / (1000000000 * (w2 - w1));
     cout << "Bandwidth = " << BW_pb1 << " GB/s" <<  " GFLOPS = " << FLOPS_pb1 << endl;
-    
+
 
     w1 = omp_get_wtime();
 

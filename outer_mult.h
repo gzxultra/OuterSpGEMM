@@ -46,19 +46,19 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
     for(int it = 0; it<10; it++)
     {
         flop  = 0;
-#pragma omp parallel for  reduction(+ : flop)
+#pragma omp parallel for reduction(+ : flop)
         for (IT i = 0; i < A.nnz; ++i)
         {
             flop += A.rowids[i];
         }
     }
     double end = omp_get_wtime();
-    
+
     double bytes = A.nnz  * sizeof(IT);
     double readbw = bytes / (1000000000 * (end-start)/10);
     cout << "Read Bandwidth (reading rowids) = " << readbw << " GB/s" << endl;
     cout << "dummy sum:" << flop << endl;
-    
+
     /*
     flop  = 0;
     start = omp_get_wtime();
@@ -68,11 +68,11 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
         flop ++;
     }
     end = omp_get_wtime();
-    
+
     cout << "time = " << 1000* (end-start) << " flop" << flop << endl;
-    
-    
-    
+
+
+
     flop  = 0;
     start = omp_get_wtime();
 #pragma omp parallel for  reduction(+ : flop)
@@ -84,11 +84,11 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
         }
     }
     end = omp_get_wtime();
-    
+
     cout << "time = " << 1000*(end-start) << " flop" << flop<< endl;
     */
-    
-    
+
+
     start = omp_get_wtime();
     for(int it = 0; it<10; it++)
     {
@@ -107,16 +107,16 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
             }
         }
     }
-    
+
     end = omp_get_wtime();
     bytes = (A.nnz) * sizeof(IT) + (A.cols) * sizeof(IT);
     readbw = bytes / (1000000000 * (end-start)/10);
     cout << "Read Bandwidth (reading rowids via colptr) = " << readbw << " GB/s" << endl;
     cout << "dummy sum:" << flop << endl;
-    
-    
-    
-   
+
+
+
+
     /*
      #pragma omp parallel for reduction(+ : flop)
      for (IT i = 0; i < A.cols; i+=8)
@@ -125,7 +125,7 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
      {
      int nA = A.colptr[i+1] - A.colptr[i];
      int nB = B.rowptr[i+1] - B.rowptr[i];
-     
+
      if(nA >=4 && nB>=4)
      {
      for(IT j=A.colptr[i+kk]; j<A.colptr[i+kk+1]; j++)
@@ -161,12 +161,12 @@ uint64_t ReadBW(const CSC<IT, NT>& A, const CSR<IT, NT>& B)
         }
     }
     end = omp_get_wtime();
-    
+
     bytes = (A.nnz + B.nnz) * sizeof(IT) + (A.cols + B.rows) * sizeof(IT);
     readbw = bytes / (1000000000 * (end-start)/10);
     cout << "Read Bandwidth (both A and B) = " << readbw << " GB/s" << endl;
     cout << "dummy sum:" << flop << endl;
-    
+
     return flop;
 }
 
